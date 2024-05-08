@@ -3,6 +3,7 @@ package helper
 import (
 	"errors"
 	"fmt"
+	constants "instix_auth/constants"
 	"net/http"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 )
 
 var (
-	iitbDomain = "iitb.ac.in"
+	iitbDomain = constants.IITBDOMAIN
 )
 
 func ValidateEmail(email string) (statusCode int, err error) {
@@ -29,11 +30,22 @@ func ValidateEmail(email string) (statusCode int, err error) {
 	return http.StatusOK, nil
 }
 
+func GetRollno(email string) (rollno string) {
+	at := strings.LastIndex(email, "@")
+	if at >= 0 {
+		username := email[:at]
+		return username
+	}
+	// check if disposable
+	println("Get roll no. is called, but no username is found")
+	return ""
+}
+
 func CheckUserType(c *gin.Context, role string) (err error) {
 	userType := c.GetString("user_type")
 	err = nil
 	if userType != role {
-		err = errors.New("Unaithorized to access this resource")
+		err = errors.New("Unauthorized to access this resource")
 		return err
 	}
 	return err

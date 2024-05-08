@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"instix_auth/constants"
 	"instix_auth/database"
 	helper "instix_auth/helpers"
 	models "instix_auth/models"
@@ -21,7 +22,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
+var userCollection *mongo.Collection = database.OpenCollection(database.Client, constants.USERDATABASE)
 var validate = validator.New()
 
 var (
@@ -193,19 +194,27 @@ func EmailverGET() gin.HandlerFunc {
 			return
 		}
 
+		rollno := helper.GetRollno(*user.Email)
 		isverified, msg := VerifyPassword(verHash, user.VerHash)
 		if isverified {
+			fmt.Println("Hash code is verified")
+			statusCode, err := CreateProfile(userId, rollno)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
 			id := user.ID
-			filter := bson.D{{"_id", id}}
-			update := bson.D{{"$set", bson.D{{"activate", true}}}}
+			filter := bson.D{{Key: "_id", Value: id}}
+			update := bson.D{{Key: "$set", Value: bson.D{{Key: "activate", Value: true}}}}
 
-			result, err := userCollection.UpdateOne(ctx, filter, update)
+			_, err = userCollection.UpdateOne(ctx, filter, update)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
-			c.JSON(http.StatusOK, result)
+			c.JSON(statusCode, gin.H{"error": "Email is verified"})
 		} else {
+			fmt.Println("Hash code is not matched")
 			fmt.Println(msg)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect hash code"})
 		}

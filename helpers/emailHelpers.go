@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"instix_auth/constants"
 	"net/smtp"
 	"os"
 )
@@ -11,6 +12,7 @@ import (
 var (
 	fromEmail    = os.Getenv("FromEmail")
 	SMTPpassword = os.Getenv("SMTPpassword")
+	Domain       = os.Getenv("DOMAIN")
 )
 
 type Request struct {
@@ -37,6 +39,8 @@ func (r *Request) ParseTemplate(templateFileName string, data interface{}) error
 }
 
 func SendEmail(name, email, subject, HTMLbody, verficationLink string) error {
+
+	//NOTE : CHANGE THE HARD CODED EMAIL BEFRORE COMMIT
 	// sender data
 	email = "samarthbnsl@gmail.com"
 	to := []string{email}
@@ -51,9 +55,11 @@ func SendEmail(name, email, subject, HTMLbody, verficationLink string) error {
 	templateData := struct {
 		Name string
 		URL  string
+		LOGO string
 	}{
 		Name: name,
 		URL:  verficationLink,
+		LOGO: Domain + constants.AssetsDir + "/logo.jpg",
 	}
 
 	r := NewRequest("Hello, World!")
@@ -64,7 +70,7 @@ func SendEmail(name, email, subject, HTMLbody, verficationLink string) error {
 		return err
 	}
 	msg := []byte(
-		"From: " + "EntityName" + ": <" + fromEmail + ">\r\n" +
+		"From: " + constants.SENDER + ": <" + fromEmail + ">\r\n" +
 			"To: " + email + "\r\n" +
 			"Subject: " + subject + "\r\n" +
 			"MIME: MIME-version: 1.0\r\n" +
