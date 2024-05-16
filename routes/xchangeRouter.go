@@ -10,4 +10,5 @@ func ItemRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.POST("xchange/add", controller.CreateItem())
 	incomingRoutes.GET("xchange/:product_id", controller.GetItem())
 	incomingRoutes.GET("xchange", controller.GetItems())
+	incomingRoutes.DELETE("xchange/:product_id", controller.DeleteItem())
 }

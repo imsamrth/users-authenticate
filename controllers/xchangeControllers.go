@@ -255,8 +255,26 @@ func GetItem() gin.HandlerFunc {
 	}
 }
 
-func DeleteItems() gin.HandlerFunc {
+func DeleteItem() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		return
+		pid := c.Param("product_id")
+		uid := c.GetString("uid")
+
+		_id, err := primitive.ObjectIDFromHex(pid) // convert params to //mongodb Hex ID
+		if err != nil {
+			fmt.Printf(err.Error())
+		}
+
+		opts := options.Delete().SetCollation(&options.Collation{})
+
+		res, err := itemCollection.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: _id}, {Key: "user_id", Value: uid}}, opts)
+		if err != nil || (res.DeletedCount == 0) {
+			fmt.Println(err)
+			c.JSON(http.StatusBadRequest, gin.H{"msg": "No documents are matched"})
+			return
+		}
+
+		fmt.Println(res.DeletedCount)
+		c.JSON(http.StatusAccepted, gin.H{"msg": "Deleted successfully"})
 	}
 }
