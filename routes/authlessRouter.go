@@ -8,5 +8,6 @@ import (
 
 func AuthlessRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.Static("/my/profile-image", constant.ProfileImageDir)
+	incomingRoutes.Static("/xchange/images", constant.ProductImageDir)
 	incomingRoutes.Static("/assets", constant.AssetsDir)
 }
