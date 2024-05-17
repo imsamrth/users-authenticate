@@ -48,9 +48,9 @@ func CreateItem() gin.HandlerFunc {
 		item.ID = primitive.NewObjectID()
 		item.Product_id = item.ID.Hex()
 
-		imagesURL, count := helper.GetImageURL("images", item.ID.Hex(), c)
+		imagesURL, count := helper.GetImagesURL("images", item.ID.Hex(), c)
 
-		if count != 10 {
+		if count != (constants.MaxItemImages + 1) {
 			msg := "Error uploading all the images"
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
@@ -71,121 +71,54 @@ func CreateItem() gin.HandlerFunc {
 }
 
 // TODO : Turn off upsert methods
-func UpdateItem() gin.HandlerFunc {
+func UpdateItemInfo() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		user_id := c.GetString("uid")
+		pid := c.Param("product_id")
+		uid := c.GetString("uid")
 
-		println(user_id, " Update Profile is called")
-		if user_id == "" {
-			log.Println("No user id found ")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "no username found"})
-			return
+		var item models.ItemInfo
+
+		_id, err := primitive.ObjectIDFromHex(pid) // convert params to //mongodb Hex ID
+		if err != nil {
+			fmt.Println(err.Error())
 		}
 
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-		var profile models.Profile
-		defer cancel()
-		if err := c.BindJSON(&profile); err != nil {
+		if err := c.BindJSON(&item); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
-		} else {
-			fmt.Println(profile.Username)
 		}
-		validationErr := validate.Struct(profile)
+
+		validationErr := validate.Struct(item)
 		if validationErr != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 			return
 		}
 
-		statusCode, err := helper.ValidateUsername(*&profile.Username, user_id, profileCollection, ctx)
+		item.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 
-		if err != nil {
-			c.JSON(statusCode, gin.H{"error": err.Error()})
-			return
-		}
-		defer cancel()
+		//TODO: Handle changes in image ( remove or add)
+		filter := bson.D{{Key: "_id", Value: _id}, {Key: "user_id", Value: uid}}
+		fmt.Println(_id)
+		fmt.Println(uid)
 
-		profile.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		update := bson.D{{Key: "$set", Value: item}}
 
-		filter := bson.D{{Key: "_id", Value: user_id}}
-		update := bson.D{{Key: "$set", Value: bson.D{
-			{Key: "username", Value: profile.Username},
-			{Key: "updated_at", Value: profile.Updated_at},
-		}}}
-
-		_, err = profileCollection.UpdateOne(context.TODO(), filter, update)
+		result, err := itemCollection.UpdateOne(context.TODO(), filter, update)
 
 		if err != nil {
 			fmt.Println(err.Error())
-			msg := fmt.Sprintf("Profile has not been updated")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-			return
-		}
-		defer cancel()
-		c.JSON(http.StatusOK, "Username updated successfully")
-	}
-}
-
-func UpdateItems() gin.HandlerFunc {
-
-	return func(c *gin.Context) {
-		user_id := c.GetString("uid")
-		isPrimary := c.Param("isPrimary")
-		println(isPrimary, "Value of isPrimary")
-		println(user_id, " Update Profile is called")
-		if user_id == "" {
-			log.Println("No user id found ")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "no username found"})
-			return
-		}
-
-		var profile models.Profile
-		if err := c.BindJSON(&profile); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		validationErr := validate.Struct(profile)
-		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
-			return
-		}
-
-		profile.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-
-		filter := bson.D{{Key: "_id", Value: user_id}}
-		var update bson.D
-		if isPrimary == "true" {
-			update = bson.D{{Key: "$set", Value: bson.D{
-				{Key: "updated_at", Value: profile.Updated_at},
-				{Key: "hostel", Value: profile.Hostel},
-				{Key: "department", Value: profile.Department},
-				{Key: "age", Value: profile.Age},
-				{Key: "clubs", Value: profile.Clubs},
-				{Key: "teams", Value: profile.Teams},
-				{Key: "year", Value: profile.Batch},
-			}}}
-		} else {
-			update = bson.D{{Key: "$set", Value: bson.D{
-				{Key: "updated_at", Value: profile.Updated_at},
-				{Key: "interest", Value: profile.Interest},
-				{Key: "por", Value: profile.POR},
-				{Key: "social", Value: profile.Social},
-				{Key: "relationship", Value: profile.Relationship},
-			}}}
-		}
-		opts := options.Update().SetUpsert(true)
-
-		result, err := profileCollection.UpdateOne(context.TODO(), filter, update, opts)
-
-		if err != nil {
-			fmt.Println(err.Error())
-			msg := fmt.Sprintf("Profile has not been updated")
+			msg := "Item has not been updated"
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
 		}
 
-		c.JSON(http.StatusOK, result.ModifiedCount)
+		if result.MatchedCount == 0 {
+			msg := "No documents is matched"
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
+		c.JSON(http.StatusOK, "Item updated successfully")
 	}
 }
 
@@ -262,7 +195,7 @@ func DeleteItem() gin.HandlerFunc {
 
 		_id, err := primitive.ObjectIDFromHex(pid) // convert params to //mongodb Hex ID
 		if err != nil {
-			fmt.Printf(err.Error())
+			fmt.Println(err.Error())
 		}
 
 		opts := options.Delete().SetCollation(&options.Collation{})

@@ -19,3 +19,6 @@ const ProfileImageDir string = ImageDir + "/profiles"
 const ProfileImageURL string = "/my/profile-image"
 const ProductImageDir string = ImageDir + "/products"
 const ProductImageURL string = "/xchange/images"
+
+// XCHANGE CONSTANTS
+const MaxItemImages int = 6
