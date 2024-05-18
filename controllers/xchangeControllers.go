@@ -122,6 +122,70 @@ func UpdateItemInfo() gin.HandlerFunc {
 	}
 }
 
+func UpdateItemImages() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		pid := c.Param("product_id")
+		uid := c.GetString("uid")
+
+		var ItemImages models.ItemImages
+
+		_id, err := primitive.ObjectIDFromHex(pid) // convert params to //mongodb Hex ID
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		if err := c.Bind(&ItemImages); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		validationErr := validate.Struct(ItemImages)
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			return
+		}
+
+		//fmt.Printf("Item Images is following \n %+v \n", ItemImages)
+		//ItemImages.Removed = append(ItemImages.Removed, "DEMO IMAGE HOST")
+		fmt.Println(ItemImages.Removed)
+		fmt.Println(len(ItemImages.Removed))
+		imagesURL := helper.UpdateImagesURL(ItemImages.Removed, ItemImages.Files, pid, c)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		var updated_at time.Time
+		updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+		filter := bson.D{{Key: "_id", Value: _id}, {Key: "user_id", Value: uid}}
+
+		update := bson.D{{Key: "$set", Value: bson.D{
+			{Key: "imagesURL", Value: imagesURL},
+			{Key: "updated_at", Value: updated_at},
+		}}}
+
+		result, err := itemCollection.UpdateOne(context.TODO(), filter, update)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			msg := "Item Images has not been updated"
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		if result.MatchedCount == 0 {
+			msg := "No documents is matched"
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
+		c.JSON(http.StatusOK, "Item Images updated successfully")
+	}
+}
+
 func GetItems() gin.HandlerFunc {
 	return func(c *gin.Context) {
 

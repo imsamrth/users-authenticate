@@ -12,4 +12,5 @@ func ItemRoutes(incomingRoutes *gin.Engine) {
 	incomingRoutes.GET("xchange", controller.GetItems())
 	incomingRoutes.DELETE("xchange/:product_id", controller.DeleteItem())
 	incomingRoutes.PATCH("xchange/:product_id", controller.UpdateItemInfo())
+	incomingRoutes.PATCH("xchange/:product_id/images", controller.UpdateItemImages())
 }

@@ -38,10 +38,10 @@ type ListItem struct {
 }
 
 type ItemImages struct {
-	Added   []int                   `form:"added"`
-	Removed []int                   `form:"removed"`
-	Updated []int                   `form:"updated"`
-	Files   []*multipart.FileHeader `form:"files"`
+	ImagesURL []string                `form:"imagesurl" validate:"dive,http_url"`
+	Removed   []string                `form:"removed"  validate:"dive,http_url"`
+	Files     []*multipart.FileHeader `form:"images"`
+	Sample    string                  `form:"sample"`
 }
 
 type ItemInfo struct {
