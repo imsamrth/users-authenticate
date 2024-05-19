@@ -9,9 +9,9 @@ import (
 	models "instix_auth/models"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
+	"github.com/ajclopez/mgs"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -57,6 +57,7 @@ func CreateItem() gin.HandlerFunc {
 		}
 
 		item.ImagesURL = imagesURL
+		item.DisplayURL = imagesURL[0]
 
 		resultInsertionNumber, insertErr := itemCollection.InsertOne(ctx, item)
 		if insertErr != nil {
@@ -165,6 +166,7 @@ func UpdateItemImages() gin.HandlerFunc {
 
 		update := bson.D{{Key: "$set", Value: bson.D{
 			{Key: "imagesURL", Value: imagesURL},
+			{Key: "displayurl", Value: imagesURL[0]},
 			{Key: "updated_at", Value: updated_at},
 		}}}
 
@@ -189,41 +191,56 @@ func UpdateItemImages() gin.HandlerFunc {
 func GetItems() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		query := c.Request.URL.RawQuery
 
-		recordPerPage, err := strconv.Atoi(c.Query("recordPerPage"))
-		if err != nil || recordPerPage < 1 {
-			recordPerPage = 10
-		}
-		page, err1 := strconv.Atoi(c.Query("page"))
-		if err1 != nil || page < 1 {
-			page = 1
-		}
+		var products []models.ListItem
 
-		startIndex := (page - 1) * recordPerPage
-		startIndex, err = strconv.Atoi(c.Query("startIndex"))
-
-		matchStage := bson.D{{Key: "$match", Value: bson.D{{}}}}
-		groupStage := bson.D{{"$group", bson.D{
-			{"_id", bson.D{{"_id", "null"}}},
-			{"total_count", bson.D{{"$sum", 1}}},
-			{"data", bson.D{{"$push", "$$ROOT"}}}}}}
-		projectStage := bson.D{
-			{"$project", bson.D{
-				{"_id", 0},
-				{"total_count", 1},
-				{"product_items", bson.D{{"$slice", []interface{}{"$data", startIndex, recordPerPage}}}}}}}
-		result, err := itemCollection.Aggregate(ctx, mongo.Pipeline{
-			matchStage, groupStage, projectStage})
-		defer cancel()
+		opts := mgs.FindOption()
+		// Set max limit to restrict the number of results returned
+		opts.SetMaxLimit(100)
+		result, err := mgs.MongoGoSearch(query, opts)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while listing products"})
+			//invalid query
+			log.Print("Invalid query", err)
+			c.JSON(http.StatusInternalServerError, products)
+			return
 		}
-		var allProducts []bson.M
-		if err = result.All(ctx, &allProducts); err != nil {
-			log.Fatal(err)
+
+		findOpts := options.Find()
+		findOpts.SetLimit(result.Limit)
+		findOpts.SetSkip(result.Skip)
+		findOpts.SetSort(result.Sort)
+
+		fmt.Printf("Projection is following: %+v\n", result.Projection)
+		projection := map[string]int{
+			"title":      1,
+			"price":      1,
+			"condition":  1,
+			"seller":     1,
+			"ctgry":      1,
+			"status":     1,
+			"displayurl": 1,
 		}
-		c.JSON(http.StatusOK, allProducts[0])
+
+		findOpts.SetProjection(projection)
+
+		cur, err := itemCollection.Find(c, result.Filter, findOpts)
+		if err != nil {
+			log.Print("Error finding products", err)
+			c.JSON(http.StatusInternalServerError, products)
+			return
+		}
+		for cur.Next(c) {
+			var product models.ListItem
+			err := cur.Decode(&product)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, products)
+				return
+			}
+			products = append(products, product)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"count": len(products), "products": products})
 	}
 }
 
