@@ -211,17 +211,15 @@ func GetItems() gin.HandlerFunc {
 		findOpts.SetSkip(result.Skip)
 		findOpts.SetSort(result.Sort)
 
-		fmt.Printf("Projection is following: %+v\n", result.Projection)
-		projection := map[string]int{
-			"title":      1,
-			"price":      1,
-			"condition":  1,
-			"seller":     1,
-			"ctgry":      1,
-			"status":     1,
-			"displayurl": 1,
+		projection := bson.D{
+			{Key: "title", Value: 1},
+			{Key: "price", Value: 1},
+			{Key: "condition", Value: 1},
+			{Key: "seller", Value: 1},
+			{Key: "ctgry", Value: 1},
+			{Key: "status", Value: 1},
+			{Key: "displayurl", Value: bson.D{{Key: "$first", Value: "$imagesurl"}}},
 		}
-
 		findOpts.SetProjection(projection)
 
 		cur, err := itemCollection.Find(c, result.Filter, findOpts)

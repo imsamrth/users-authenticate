@@ -32,10 +32,10 @@ type ListItem struct {
 	Title      string             `json:"title,omitempty"`
 	Condition  int                `json:"condition,omitempty"`
 	Price      int                `json:"price,omitempty"`
-	Seller     string             `json:"seller"`
-	Category   string             `json:"ctgry"`
-	User_id    string             `json:"user_id" validate:"required"`
-	Status     string             `json:"status" validate:"required,eq=ACTIVE|eq=SOLD"`
+	Seller     string             `json:"seller,omitempty"`
+	Category   string             `json:"ctgry,omitempty"`
+	User_id    string             `json:"user_id,omitempty" validate:"required"`
+	Status     string             `json:"status,omitempty" validate:"required,eq=ACTIVE|eq=SOLD"`
 }
 
 type ItemImages struct {
