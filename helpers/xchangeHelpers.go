@@ -11,10 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	domName = os.Getenv("DomainName")
-)
-
 func GetImagesURL(fieldName string, pid string, c *gin.Context) (ImagesURL []string, uploadedImages int) {
 
 	form, _ := c.MultipartForm()
@@ -39,32 +35,6 @@ func GetImagesURL(fieldName string, pid string, c *gin.Context) (ImagesURL []str
 	}
 
 	return ImagesURL, constants.MaxItemImages + 1
-}
-
-func GetImageURL(fieldName string, pid string, c *gin.Context) (ImagesURL []string) {
-
-	form, _ := c.MultipartForm()
-	files := form.File[fieldName]
-
-	for i, file := range files {
-		if i > constants.MaxItemImages {
-			break
-		}
-
-		fmt.Println(file.Filename)
-		fileExt := strings.Split(file.Filename, ".")[1]
-		image := fmt.Sprintf("%d.%s", i, fileExt)
-		// Upload the file to specific dst.
-
-		err := c.SaveUploadedFile(file, fmt.Sprintf("%s/%s/%s", constants.ProductImageDir, pid, image))
-		if err != nil {
-			fmt.Println("Error in saving Image :", err)
-			return ImagesURL
-		}
-		ImagesURL = append(ImagesURL, fmt.Sprintf("%s%s/%s/%s", domName, constants.ProductImageURL, pid, image))
-	}
-
-	return ImagesURL
 }
 
 func UpdateImagesURL(removed []string, images []*multipart.FileHeader, pid string, c *gin.Context) (ImagesURL []string) {

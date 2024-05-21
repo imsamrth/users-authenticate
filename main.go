@@ -29,6 +29,7 @@ func main() {
 	routes.UserRoutes(router)
 	routes.ProfileRoutes(router)
 	routes.ItemRoutes(router)
+	routes.VenueRoutes(router)
 
 	router.GET("/api-1", func(c *gin.Context) {
 		c.JSON(200, gin.H{"success": "Access grated for api-1"})
