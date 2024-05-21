@@ -23,5 +23,9 @@ const ProductImageURL string = "/xchange/images"
 const VenueImageDir string = ImageDir + "/venues"
 const VenueImageURL string = "/venue/images"
 
+// FORM CONSTANTS
+const TRUE string = "true"
+const FALSE string = "false"
+
 // XCHANGE CONSTANTS
 const MaxItemImages int = 6
