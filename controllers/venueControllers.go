@@ -10,10 +10,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ajclopez/mgs"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var venueCollection *mongo.Collection = database.OpenCollection(database.Client, constants.VENUEDATABASE)
@@ -179,5 +181,56 @@ func GetVenue() gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, venue)
+	}
+}
+
+func GetVenues() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		query := c.Request.URL.RawQuery
+
+		var venues []models.Venue
+
+		opts := mgs.FindOption()
+		// Set max limit to restrict the number of results returned
+		opts.SetMaxLimit(100)
+		result, err := mgs.MongoGoSearch(query, opts)
+		if err != nil {
+			//invalid query
+			fmt.Println("Invalid query", err)
+			c.JSON(http.StatusInternalServerError, venues)
+			return
+		}
+
+		findOpts := options.Find()
+		findOpts.SetSort(result.Sort)
+
+		projection := bson.D{
+			{Key: "name", Value: 1},
+			{Key: "imageurl", Value: 1},
+			{Key: "owner", Value: 1},
+			{Key: "location", Value: 1},
+			{Key: "ctgry", Value: 1},
+			{Key: "time", Value: 1},
+		}
+		findOpts.SetProjection(projection)
+
+		cur, err := venueCollection.Find(c, result.Filter, findOpts)
+		if err != nil {
+			fmt.Print("Error finding venues", err)
+			c.JSON(http.StatusInternalServerError, venues)
+			return
+		}
+		for cur.Next(c) {
+			var venue models.Venue
+			err := cur.Decode(&venue)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, venues)
+				return
+			}
+			venues = append(venues, venue)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"count": len(venues), "venues": venues})
 	}
 }
