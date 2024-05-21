@@ -180,10 +180,6 @@ func EmailverGET() gin.HandlerFunc {
 		userId := c.Param("user_id")
 		verHash := c.Param("ver_hash")
 
-		if err := helper.MatchUserTypeToUid(c, userId); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 		var user models.User

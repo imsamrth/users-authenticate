@@ -11,6 +11,7 @@ const IITBDOMAIN string = "iitb.ac.in"
 const PROFILEDATABASE string = "profile"
 const USERDATABASE string = "user"
 const ITEMDATABASE string = "item"
+const VENUEDATABASE string = "venue"
 
 // Image Upload Paths
 const AssetsDir string = "./assets"
@@ -19,6 +20,8 @@ const ProfileImageDir string = ImageDir + "/profiles"
 const ProfileImageURL string = "/my/profile-image"
 const ProductImageDir string = ImageDir + "/products"
 const ProductImageURL string = "/xchange/images"
+const VenueImageDir string = ImageDir + "/venues"
+const VenueImageURL string = "/venue/images"
 
 // XCHANGE CONSTANTS
 const MaxItemImages int = 6
