@@ -29,26 +29,6 @@ var (
 	domName = os.Getenv("DomainName")
 )
 
-func HashPassword(password string) string {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	if err != nil {
-		log.Panic(err)
-	}
-	return string(bytes)
-}
-
-func VerifyPassword(userPassword string, providedPassword string) (bool, string) {
-	err := bcrypt.CompareHashAndPassword([]byte(providedPassword), []byte(userPassword))
-	check := true
-	msg := ""
-
-	if err != nil {
-		msg = fmt.Sprintf("Hash is incorrect")
-		check = false
-	}
-	return check, msg
-}
-
 func Signup() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
@@ -72,7 +52,7 @@ func Signup() gin.HandlerFunc {
 		}
 
 		fmt.Print("Email Validation is checked successfully")
-		password := HashPassword(*user.Password)
+		password := helper.HashPassword(*user.Password)
 		user.Password = &password
 
 		count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
@@ -191,7 +171,7 @@ func EmailverGET() gin.HandlerFunc {
 		}
 
 		rollno := helper.GetRollno(*user.Email)
-		isverified, msg := VerifyPassword(verHash, user.VerHash)
+		isverified, msg := helper.VerifyPassword(verHash, user.VerHash)
 		if isverified {
 			fmt.Println("Hash code is verified")
 			statusCode, err := CreateProfile(userId, rollno)
@@ -237,7 +217,7 @@ func Login() gin.HandlerFunc {
 			return
 		}
 
-		passwordIsValid, msg := VerifyPassword(*user.Password, *foundUser.Password)
+		passwordIsValid, msg := helper.VerifyPassword(*user.Password, *foundUser.Password)
 		defer cancel()
 
 		if passwordIsValid != true {

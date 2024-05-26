@@ -12,9 +12,9 @@ var BodyLevels map[string]int = map[string]int{"DOSA": 0, "Institute": 1, "Indiv
 type Body struct {
 	// To control access of body admin to the features and the platform
 	ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Password string             `form:"password" json:"password" bson:"password"`
+	Password *string            `form:"password" json:"password" bson:"password"`
 	Verified bool               `form:"verified" json:"verified" bson:"verified"`
-
+	Username string             `form:"username" json:"username" bson:"username"`
 	//Basic details about the body
 	Name        string      `form:"name" json:"name" validate:"required"`
 	Description string      `form:"desc" json:"desc,omitempty" bson:"desc" validate:"required"`
@@ -52,6 +52,7 @@ type Member struct {
 type Council struct {
 	ID       primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Body     string             `form:"bid" json:"bid" bson:"bid"`
+	Session  string
 	Fourthie []Member
 	Thirdie  []Member
 	Sophie   []Member
