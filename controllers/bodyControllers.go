@@ -11,10 +11,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ajclopez/mgs"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var bodyCollection *mongo.Collection = database.OpenCollection(database.Client, constants.BODIESDATABASE)
@@ -62,7 +64,7 @@ func CreateBody() gin.HandlerFunc {
 
 		body.Verified = false
 
-		file, _ := c.FormFile("images")
+		file, _ := c.FormFile("image")
 		fp := constants.BodyLogoDir + "/" + body.ID.Hex()
 		sp := constants.BodyLogoURL + "/" + body.ID.Hex()
 		imageURL := helper.GetImageURL(file, body.ID.Hex(), fp, sp, c)
@@ -82,5 +84,216 @@ func CreateBody() gin.HandlerFunc {
 		}
 		defer cancel()
 		c.JSON(http.StatusOK, resultInsertionNumber)
+	}
+}
+
+func GetBodies() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		query := c.Request.URL.RawQuery
+
+		var bodies []models.Body
+
+		opts := mgs.FindOption()
+		// Set max limit to restrict the number of results returned
+		opts.SetMaxLimit(100)
+		result, err := mgs.MongoGoSearch(query, opts)
+		if err != nil {
+			//invalid query
+			log.Print("Invalid query", err)
+			c.JSON(http.StatusInternalServerError, bodies)
+			return
+		}
+
+		findOpts := options.Find()
+		findOpts.SetLimit(result.Limit)
+		findOpts.SetSkip(result.Skip)
+		findOpts.SetSort(result.Sort)
+
+		projection := bson.D{
+			{Key: "username", Value: 1},
+			{Key: "name", Value: 1},
+			{Key: "desc", Value: 1},
+			{Key: "imageurl", Value: 1},
+			{Key: "location", Value: 1},
+			{Key: "type", Value: 1},
+			{Key: "level", Value: 1},
+			{Key: "ctgry", Value: 1},
+		}
+		findOpts.SetProjection(projection)
+
+		cur, err := bodyCollection.Find(c, result.Filter, findOpts)
+		if err != nil {
+			log.Print("Error finding products", err)
+			c.JSON(http.StatusInternalServerError, bodies)
+			return
+		}
+		for cur.Next(c) {
+			var body models.Body
+			err := cur.Decode(&body)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, bodies)
+				return
+			}
+			bodies = append(bodies, body)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"count": len(bodies), "bodies": bodies})
+	}
+}
+
+func GetBody() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		bid := c.Param("body_id")
+
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+		var body models.Body
+		fmt.Println(bid)
+		id, err := primitive.ObjectIDFromHex(bid)
+
+		defer cancel()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		err = bodyCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&body)
+		defer cancel()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, body)
+	}
+}
+
+func VerfiyBody() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		if err := helper.CheckUserType(c, "ADMIN"); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		bid := c.Param("body_id")
+
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+		var body models.Body
+		id, err := primitive.ObjectIDFromHex(bid)
+		err = bodyCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&body)
+		defer cancel()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		filter := bson.D{{Key: "_id", Value: id}}
+		update := bson.D{{Key: "$set", Value: bson.D{{Key: "verified", Value: true}}}}
+
+		_, err = userCollection.UpdateOne(ctx, filter, update)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"msg": "Body is approved"})
+
+		defer cancel()
+	}
+}
+
+func UpdateBody() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		bid := c.Param("body_id")
+		fmt.Println(bid)
+		id, err := primitive.ObjectIDFromHex(bid)
+
+		password := c.Request.FormValue("password")
+		var foundBody models.Body
+		err = bodyCollection.FindOne(c, bson.M{"_id": id}).Decode(&foundBody)
+
+		fmt.Printf("Given password %s\nFound password %s\n", password, *foundBody.Password)
+		passwordIsValid, msg := helper.VerifyPassword(password, *foundBody.Password)
+		if passwordIsValid != true {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		file, err := c.FormFile("image")
+
+		if err != nil && err.Error() != constants.NO_IMAGE_IN_FORM {
+			fmt.Println("Error in uploading Image : ", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		var body models.Body
+
+		_id, err := primitive.ObjectIDFromHex(bid) // convert params to //mongodb Hex ID
+		if err != nil {
+			fmt.Println("Not able to convert bid")
+			fmt.Println(err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if err := c.Bind(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		fmt.Printf("Body is followinfg \n %+v \n", body)
+
+		validationErr := validate.Struct(body)
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			return
+		}
+
+		isUpdated := c.Request.FormValue("is_removed")
+
+		if (isUpdated == constants.TRUE) && (body.ImageURL != "") {
+			fp := constants.BodyLogoDir + "/" + bid
+			sp := constants.BodyLogoURL + "/" + bid
+			err = helper.RemoveImage(body.ImageURL, sp, fp, c)
+			if err == nil {
+				imageURL := helper.GetImageURL(file, bid, fp, sp, c)
+				body.ImageURL = imageURL
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+		body.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+		filter := bson.D{{Key: "_id", Value: _id}}
+		fmt.Println(_id)
+
+		update := bson.D{{Key: "$set", Value: bson.D{
+			{Key: "name", Value: body.Name},
+			{Key: "desc", Value: body.Description},
+			{Key: "address", Value: body.Address},
+			{Key: "location", Value: body.Location},
+			{Key: "website", Value: body.Website},
+			{Key: "imageurl", Value: body.ImageURL},
+		}}}
+
+		result, err := bodyCollection.UpdateOne(context.TODO(), filter, update)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			msg := "Body has not been updated"
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		if result.MatchedCount == 0 {
+			msg := "No documents is matched"
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
+
+		c.JSON(http.StatusOK, "Body updated successfully")
 	}
 }
