@@ -176,12 +176,12 @@ func VerfiyBody() gin.HandlerFunc {
 		}
 
 		bid := c.Param("body_id")
-
+		fmt.Println(bid)
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 		var body models.Body
-		id, err := primitive.ObjectIDFromHex(bid)
-		err = bodyCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&body)
+		id, _ := primitive.ObjectIDFromHex(bid)
+		err := bodyCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&body)
 		defer cancel()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -191,7 +191,9 @@ func VerfiyBody() gin.HandlerFunc {
 		filter := bson.D{{Key: "_id", Value: id}}
 		update := bson.D{{Key: "$set", Value: bson.D{{Key: "verified", Value: true}}}}
 
-		_, err = userCollection.UpdateOne(ctx, filter, update)
+		result, err := bodyCollection.UpdateOne(ctx, filter, update)
+		fmt.Println(body)
+		fmt.Println(result.MatchedCount)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -295,5 +297,60 @@ func UpdateBody() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, "Body updated successfully")
+	}
+}
+
+func PutCouncilStruct() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		bid := c.Param("body_id")
+		id, _ := primitive.ObjectIDFromHex(bid)
+
+		var councilStruct models.Body
+		if err := c.BindJSON(&councilStruct); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		password := councilStruct.Password
+		var foundBody models.Body
+		//opts := options.FindOne().SetProjection(bson.D{{Key: "password", Value: 1}, {Key: "verified", Value: 1}})
+		_ = bodyCollection.FindOne(c, bson.M{"_id": id}).Decode(&foundBody)
+
+		passwordIsValid, msg := helper.VerifyPassword(*password, *foundBody.Password)
+		if !passwordIsValid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
+		if !foundBody.Verified {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Body is not verified"})
+			return
+		}
+
+		validationErr := validate.Struct(councilStruct.Council)
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			return
+		}
+
+		updated_at, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+		filter := bson.D{{Key: "_id", Value: id}}
+		update := bson.D{{Key: "$set", Value: bson.D{
+			{Key: "council", Value: councilStruct.Council},
+			{Key: "updated_at", Value: updated_at},
+		}}}
+
+		result, err := bodyCollection.UpdateOne(context.TODO(), filter, update)
+		if err != nil {
+			fmt.Println(err.Error())
+			msg := fmt.Sprintf("Council Struct has not been updated")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+		fmt.Println(result.MatchedCount)
+
+		c.JSON(http.StatusOK, "Council Struct updated successfully")
+
 	}
 }
