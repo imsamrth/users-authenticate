@@ -45,8 +45,15 @@ type CouncilStruct struct {
 }
 
 type Member struct {
-	Name string
-	Uid  string
+	ID      primitive.ObjectID `json:"id" bson:"_id"`
+	POR     string
+	Body    string
+	BID     string
+	Session string
+	Level   int8
+	Name    string
+	Uid     string
+	Tags    []string
 }
 
 type Council struct {
