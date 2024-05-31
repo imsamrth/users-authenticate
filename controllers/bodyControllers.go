@@ -354,3 +354,31 @@ func PutCouncilStruct() gin.HandlerFunc {
 
 	}
 }
+
+func GetCouncilStruct() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		bid := c.Param("body_id")
+
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+		var body models.Body
+
+		fmt.Println(bid)
+		id, err := primitive.ObjectIDFromHex(bid)
+
+		defer cancel()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		opts := options.FindOne().SetProjection(bson.D{{Key: "council", Value: 1}})
+		err = bodyCollection.FindOne(ctx, bson.M{"_id": id}, opts).Decode(&body)
+		defer cancel()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, body.Council)
+	}
+}
