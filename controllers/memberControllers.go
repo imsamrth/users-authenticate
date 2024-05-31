@@ -7,9 +7,11 @@ import (
 	"instix_auth/database"
 	helper "instix_auth/helpers"
 	models "instix_auth/models"
+	"log"
 	"net/http"
 	"time"
 
+	"github.com/ajclopez/mgs"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -35,8 +37,6 @@ func CreateCouncil() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		fmt.Printf("payload is following\n%+v\n", payload)
 
 		id, err := primitive.ObjectIDFromHex(bid)
 		var foundBody models.Body
@@ -84,5 +84,57 @@ func CreateCouncil() gin.HandlerFunc {
 		}
 		defer cancel()
 		c.JSON(http.StatusOK, resultInsertionNumber)
+	}
+}
+
+func GetMembers() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		query := c.Request.URL.RawQuery
+
+		var members []models.Member
+
+		opts := mgs.FindOption()
+		// Set max limit to restrict the number of results returned
+		opts.SetMaxLimit(100)
+		result, err := mgs.MongoGoSearch(query, opts)
+		if err != nil {
+			//invalid query
+			log.Print("Invalid query", err)
+			c.JSON(http.StatusInternalServerError, members)
+			return
+		}
+
+		findOpts := options.Find()
+		findOpts.SetLimit(result.Limit)
+		findOpts.SetSkip(result.Skip)
+		findOpts.SetSort(result.Sort)
+
+		projection := bson.D{
+			{Key: "por", Value: 1},
+			{Key: "body", Value: 1},
+			{Key: "session", Value: 1},
+			{Key: "level", Value: 1},
+			{Key: "uid", Value: 1},
+		}
+		findOpts.SetProjection(projection)
+
+		cur, err := memberCollection.Find(c, result.Filter, findOpts)
+		if err != nil {
+			log.Print("Error finding products", err)
+			c.JSON(http.StatusInternalServerError, members)
+			return
+		}
+		for cur.Next(c) {
+			var member models.Member
+			err := cur.Decode(&member)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, members)
+				return
+			}
+			members = append(members, member)
+		}
+
+		c.JSON(http.StatusOK, gin.H{"count": len(members), "products": members})
 	}
 }

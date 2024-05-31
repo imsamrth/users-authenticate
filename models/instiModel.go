@@ -48,8 +48,8 @@ type Member struct {
 	ID      primitive.ObjectID `json:"id" bson:"_id"`
 	POR     string
 	Body    string
-	BID     string
-	Session string
+	BID     string `json:"bid" bson:"bid"`
+	Session string `json:"session" bson:"session"`
 	Level   int8
 	Name    string
 	Uid     string

@@ -18,6 +18,7 @@ func InstiRoutes(incomingRoutes *gin.Engine) {
 		instiRoutes.Use(middleware.Authenticate())
 		instiRoutes.GET("/", controller.GetBodies())
 		instiRoutes.GET("/:body_id", controller.GetBody())
+		instiRoutes.GET("/council/", controller.GetMembers())
 		instiRoutes.PATCH("/approve/:body_id", controller.VerfiyBody())
 	}
 }
