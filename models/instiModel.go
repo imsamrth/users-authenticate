@@ -65,3 +65,7 @@ type Council struct {
 	Sophie   []Member
 	Freshie  []Member
 }
+
+type Testing struct {
+	Test string
+}
