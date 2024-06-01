@@ -13,6 +13,7 @@ const USERDATABASE string = "user"
 const ITEMDATABASE string = "item"
 const VENUEDATABASE string = "venue"
 const BODIESDATABASE string = "body"
+const MEMEBERDATABASE string = "member"
 
 // Image Upload Paths
 const AssetsDir string = "./assets"
