@@ -10,3 +10,6 @@ const VENUE_NOT_CREATED string = "Venue not created"
 
 //BODIES ERROR
 const BODY_NAME_ALREADY_TAKEN string = "This name for body has already been taken"
+
+//MEMBERS ERROR
+const MEMBER_NOT_DELETED string = "Member not able to be deleted"

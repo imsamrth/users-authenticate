@@ -45,7 +45,7 @@ type CouncilStruct struct {
 }
 
 type Member struct {
-	ID      primitive.ObjectID `json:"id" bson:"_id"`
+	ID      primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	POR     string
 	Body    string
 	BID     string `json:"bid" bson:"bid"`

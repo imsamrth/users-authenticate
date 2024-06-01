@@ -38,6 +38,12 @@ func CreateCouncil() gin.HandlerFunc {
 			return
 		}
 
+		validationErr := validate.Struct(payload)
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			return
+		}
+
 		id, err := primitive.ObjectIDFromHex(bid)
 		var foundBody models.Body
 		err = bodyCollection.FindOne(c, bson.M{"_id": id}, options.FindOne().SetProjection(bson.D{{Key: "password", Value: 1}})).Decode(&foundBody)
@@ -49,11 +55,6 @@ func CreateCouncil() gin.HandlerFunc {
 		passwordIsValid, msg := helper.VerifyPassword(payload.Password, *foundBody.Password)
 		if !passwordIsValid {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-			return
-		}
-		validationErr := validate.Struct(payload)
-		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 			return
 		}
 
@@ -121,7 +122,7 @@ func GetMembers() gin.HandlerFunc {
 
 		cur, err := memberCollection.Find(c, result.Filter, findOpts)
 		if err != nil {
-			log.Print("Error finding products", err)
+			log.Print("Error finding members", err)
 			c.JSON(http.StatusInternalServerError, members)
 			return
 		}
@@ -135,7 +136,36 @@ func GetMembers() gin.HandlerFunc {
 			members = append(members, member)
 		}
 
-		c.JSON(http.StatusOK, gin.H{"count": len(members), "products": members})
+		c.JSON(http.StatusOK, gin.H{"count": len(members), "members": members})
+	}
+}
+
+func GetMember() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		mid := c.Param("member_id")
+		var member models.Member
+
+		findOpts := options.FindOne()
+		projection := bson.D{
+			{Key: "por", Value: 1},
+			{Key: "body", Value: 1},
+			{Key: "session", Value: 1},
+			{Key: "level", Value: 1},
+			{Key: "uid", Value: 1},
+		}
+		findOpts.SetProjection(projection)
+
+		_id, err := primitive.ObjectIDFromHex(mid)
+		err = memberCollection.FindOne(c, bson.D{{Key: "_id", Value: _id}}, findOpts).Decode(&member)
+
+		if err != nil {
+			log.Print("Error finding member", err)
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, member)
 	}
 }
 
@@ -156,6 +186,12 @@ func AddMember() gin.HandlerFunc {
 			return
 		}
 
+		validationErr := validate.Struct(payload)
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			return
+		}
+
 		id, _ := primitive.ObjectIDFromHex(bid)
 		var foundBody models.Body
 		err := bodyCollection.FindOne(c, bson.M{"_id": id}, options.FindOne().SetProjection(bson.D{{Key: "password", Value: 1}})).Decode(&foundBody)
@@ -167,11 +203,6 @@ func AddMember() gin.HandlerFunc {
 		passwordIsValid, msg := helper.VerifyPassword(payload.Password, *foundBody.Password)
 		if !passwordIsValid {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-			return
-		}
-		validationErr := validate.Struct(payload)
-		if validationErr != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 			return
 		}
 
@@ -193,5 +224,106 @@ func AddMember() gin.HandlerFunc {
 		}
 		defer cancel()
 		c.JSON(http.StatusOK, resultInsertionNumber)
+	}
+}
+
+func UpdateMember() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		mid := c.Param("member_id")
+
+		var payload struct {
+			Bid      string        `json:"bid"`
+			Password string        `json:"password"`
+			Member   models.Member `json:"member"`
+		}
+
+		if err := c.BindJSON(&payload); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		validationErr := validate.Struct(payload)
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			return
+		}
+
+		if err := helper.VerifyBodyId(payload.Bid, payload.Password, bodyCollection); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if statusCode, err := helper.IsMemberOfBody(mid, payload.Bid, memberCollection); err != nil {
+			c.JSON(statusCode, gin.H{"error": err.Error()})
+			return
+		}
+
+		_id, _ := primitive.ObjectIDFromHex(mid)
+		filter := bson.D{{Key: "_id", Value: _id}}
+		update := bson.D{{Key: "$set", Value: payload.Member}}
+
+		result, err := memberCollection.UpdateOne(context.TODO(), filter, update)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			msg := "Member has not been updated"
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		if result.MatchedCount == 0 {
+			msg := "No Member is matched"
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
+		c.JSON(http.StatusOK, "Member updated successfully")
+	}
+}
+
+func DeleteMember() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		mid := c.Param("member_id")
+
+		var payload struct {
+			Bid      string `json:"bid"`
+			Password string `json:"password"`
+		}
+
+		if err := c.BindJSON(&payload); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		validationErr := validate.Struct(payload)
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			return
+		}
+
+		if err := helper.VerifyBodyId(payload.Bid, payload.Password, bodyCollection); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if statusCode, err := helper.IsMemberOfBody(mid, payload.Bid, memberCollection); err != nil {
+			c.JSON(statusCode, gin.H{"error": err.Error()})
+			return
+		}
+
+		_id, _ := primitive.ObjectIDFromHex(mid)
+
+		opts := options.Delete().SetCollation(&options.Collation{})
+
+		res, err := memberCollection.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: _id}}, opts)
+		if err != nil || (res.DeletedCount == 0) {
+			fmt.Println(err)
+			c.JSON(http.StatusBadRequest, gin.H{"msg": constants.MEMBER_NOT_DELETED})
+			return
+		}
+
+		fmt.Println(res.DeletedCount)
+		c.JSON(http.StatusAccepted, gin.H{"msg": "Deleted successfully"})
 	}
 }
