@@ -138,3 +138,60 @@ func GetMembers() gin.HandlerFunc {
 		c.JSON(http.StatusOK, gin.H{"count": len(members), "products": members})
 	}
 }
+
+func AddMember() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+		bid := c.Param("body_id")
+		var payload struct {
+			Session  string
+			Password string
+			Member   models.Member `json:"member"`
+		}
+
+		if err := c.BindJSON(&payload); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		id, _ := primitive.ObjectIDFromHex(bid)
+		var foundBody models.Body
+		err := bodyCollection.FindOne(c, bson.M{"_id": id}, options.FindOne().SetProjection(bson.D{{Key: "password", Value: 1}})).Decode(&foundBody)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		passwordIsValid, msg := helper.VerifyPassword(payload.Password, *foundBody.Password)
+		if !passwordIsValid {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+		validationErr := validate.Struct(payload)
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			return
+		}
+
+		session := payload.Session
+
+		defer cancel()
+
+		member := payload.Member
+		member.ID = primitive.NewObjectID()
+		member.BID = bid
+		member.Session = session
+
+		resultInsertionNumber, insertErr := memberCollection.InsertOne(ctx, member)
+		if insertErr != nil {
+			msg := "Member not created"
+			fmt.Println(insertErr.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+		defer cancel()
+		c.JSON(http.StatusOK, resultInsertionNumber)
+	}
+}

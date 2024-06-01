@@ -13,11 +13,12 @@ func InstiRoutes(incomingRoutes *gin.Engine) {
 		instiRoutes.POST("/add", controller.CreateBody())
 		instiRoutes.PUT("/:body_id", controller.UpdateBody())
 		instiRoutes.PUT("/struct/:body_id", controller.PutCouncilStruct())
-		instiRoutes.GET("/struct/:body_id", controller.GetCouncilStruct())
 		instiRoutes.POST("/council/:body_id", controller.CreateCouncil())
+		instiRoutes.POST("/member/:body_id", controller.AddMember())
 		instiRoutes.Use(middleware.Authenticate())
 		instiRoutes.GET("/", controller.GetBodies())
 		instiRoutes.GET("/:body_id", controller.GetBody())
+		instiRoutes.GET("/struct/:body_id", controller.GetCouncilStruct())
 		instiRoutes.GET("/council/", controller.GetMembers())
 		instiRoutes.PATCH("/approve/:body_id", controller.VerfiyBody())
 	}
