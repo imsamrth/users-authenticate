@@ -24,3 +24,14 @@ type Profile struct {
 	Social       map[string]string  `json:"social"`
 	Relationship string             `json:"relationship"`
 }
+
+type Post struct {
+	ID         primitive.ObjectID `json:"id" bson:"_id"`
+	User_id    string             `json:"uid" bson:"uid"`
+	Body       string
+	Link       string
+	Votes      []string
+	Tags       []string
+	Created_at time.Time `json:"created_at" bson:"created_at"`
+	Edited     bool      `json:"edited" bson:"edited"`
+}

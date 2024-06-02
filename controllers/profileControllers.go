@@ -183,7 +183,7 @@ func UpdateProfile() gin.HandlerFunc {
 }
 
 // TODO : Add limitations to type and size of image
-func UploadImagePOST() gin.HandlerFunc {
+func UploadAvatar() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user_id := c.GetString("uid")
 
