@@ -30,8 +30,10 @@ type Post struct {
 	User_id    string             `json:"uid" bson:"uid"`
 	Body       string
 	Link       string
-	Votes      []string
+	Votes      []string `json:"votes" bson:"votes"`
 	Tags       []string
 	Created_at time.Time `json:"created_at" bson:"created_at"`
 	Edited     bool      `json:"edited" bson:"edited"`
+	VotesCount int       `json:"vote_count" bson:"vote_count"`
+	Voted      bool      `json:"voted" bson:"voted"`
 }

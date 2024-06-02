@@ -17,5 +17,7 @@ func ProfileRoutes(incomingRoutes *gin.Engine) {
 	postRoutes := incomingRoutes.Group("/post")
 	{
 		postRoutes.POST("/", controller.CreatePost())
+		postRoutes.GET("/:post_id", controller.GetPost())
+		postRoutes.GET("/", controller.GetPosts())
 	}
 }
