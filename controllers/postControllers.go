@@ -144,3 +144,57 @@ func GetPosts() gin.HandlerFunc {
 
 	}
 }
+
+func ToggleVote() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		pid := c.Param("post_id")
+		uid := c.GetString("uid")
+
+		_id, err := primitive.ObjectIDFromHex(pid) // convert params to //mongodb Hex ID
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		//TODO: Handle changes in image ( remove or add)
+		filter := bson.D{{Key: "_id", Value: _id}}
+
+		update := bson.D{
+			{Key: "$set", Value: bson.D{
+				{Key: "votes", Value: bson.D{
+					{Key: "$cond", Value: bson.D{
+						{Key: "if", Value: bson.D{
+							{Key: "$in", Value: bson.A{uid, "$votes"}},
+						}},
+						{Key: "then", Value: bson.D{
+							{Key: "$setDifference", Value: bson.A{
+								"$votes", bson.A{uid},
+							}},
+						}},
+						{Key: "else", Value: bson.D{
+							{Key: "$concatArrays", Value: bson.A{"$votes", bson.A{uid}}},
+						}},
+					}},
+				}},
+			}},
+		}
+
+		result, err := postCollection.UpdateOne(context.TODO(), filter, mongo.Pipeline{update})
+
+		if err != nil {
+			fmt.Println(err.Error())
+			msg := "Post has not been updated"
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		if result.MatchedCount == 0 {
+			msg := "No documents is matched"
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
+
+		fmt.Println(result)
+		c.JSON(http.StatusOK, "Post updated successfully")
+	}
+}

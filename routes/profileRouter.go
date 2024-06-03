@@ -19,5 +19,6 @@ func ProfileRoutes(incomingRoutes *gin.Engine) {
 		postRoutes.POST("/", controller.CreatePost())
 		postRoutes.GET("/:post_id", controller.GetPost())
 		postRoutes.GET("/", controller.GetPosts())
+		postRoutes.PATCH("/:post_id", controller.ToggleVote())
 	}
 }
