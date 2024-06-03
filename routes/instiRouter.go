@@ -25,4 +25,13 @@ func InstiRoutes(incomingRoutes *gin.Engine) {
 		instiRoutes.GET("/member/:member_id", controller.GetMember())
 		instiRoutes.PATCH("/approve/:body_id", controller.VerfiyBody())
 	}
+	eventRoutes := incomingRoutes.Group("/event")
+	{
+		eventRoutes.POST("/add", controller.CreateEvent())
+		eventRoutes.PUT("/:event_id", controller.UpdateEvent())
+		eventRoutes.DELETE("/:event_id", controller.DeleteEvent())
+		eventRoutes.Use(middleware.Authenticate())
+		eventRoutes.GET("/", controller.GetEvents())
+		eventRoutes.GET("/:event_id", controller.GetEvent())
+	}
 }

@@ -16,3 +16,6 @@ const MEMBER_NOT_DELETED string = "Member not able to be deleted"
 
 //POST ERROR
 const POST_NOT_INSERTED string = "Post not started"
+
+//EVENTS ERROR
+const EVENT_NOT_DELETED string = "Event not able to be deleted"

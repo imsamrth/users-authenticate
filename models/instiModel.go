@@ -65,3 +65,14 @@ type Council struct {
 	Sophie   []Member
 	Freshie  []Member
 }
+
+type Event struct {
+	Name string
+	ID   primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Desc string
+	BID  string    `json:"bid" bson:"bid"`
+	Type string    `json:"type" bson:"type"`
+	Vid  string    `json:"vid" bson:"vid"`
+	Time time.Time `json:"time" bson:"time"`
+	Tags []string
+}

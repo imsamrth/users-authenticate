@@ -57,3 +57,18 @@ func IsMemberOfBody(mid string, bid string, collection *mongo.Collection) (statu
 	}
 	return http.StatusOK, err
 }
+
+func IsEventOfBody(eid string, bid string, collection *mongo.Collection) (statusCode int, err error) {
+	err = nil
+	_id, _ := primitive.ObjectIDFromHex(eid)
+	fmt.Printf("BID is %s\nEID is %s\n", bid, _id)
+	result := collection.FindOne(context.TODO(), bson.D{{Key: "bid", Value: bid}, {Key: "_id", Value: _id}})
+	err = result.Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return http.StatusBadRequest, err
+		}
+		return http.StatusInternalServerError, err
+	}
+	return http.StatusOK, err
+}

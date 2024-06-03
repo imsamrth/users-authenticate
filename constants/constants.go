@@ -15,6 +15,7 @@ const VENUEDATABASE string = "venue"
 const BODIESDATABASE string = "body"
 const MEMEBERDATABASE string = "member"
 const POSTDATABASE string = "post"
+const EVENTDATABASE string = "event"
 
 // Image Upload Paths
 const AssetsDir string = "./assets"
