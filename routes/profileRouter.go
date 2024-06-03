@@ -7,8 +7,20 @@ import (
 )
 
 func ProfileRoutes(incomingRoutes *gin.Engine) {
-	incomingRoutes.PUT("/my/profile-image", controller.UploadImagePOST())
-	incomingRoutes.PATCH("/my/profile/:isPrimary", controller.UpdateProfile())
-	incomingRoutes.PUT("/my/profile/username", controller.UpdateUsername())
-	incomingRoutes.GET("/profiles", controller.GetProfiles())
+	profileRoutes := incomingRoutes.Group("/profile")
+	{
+		profileRoutes.PUT("/my/avatar", controller.UploadAvatar())
+		profileRoutes.PATCH("/my/profile/:isPrimary", controller.UpdateProfile())
+		profileRoutes.PUT("my/username", controller.UpdateUsername())
+		profileRoutes.GET("/", controller.GetProfiles())
+	}
+	postRoutes := incomingRoutes.Group("/post")
+	{
+		postRoutes.POST("/", controller.CreatePost())
+		postRoutes.GET("/:post_id", controller.GetPost())
+		postRoutes.GET("/", controller.GetPosts())
+		postRoutes.PATCH("/:post_id", controller.ToggleVote())
+		postRoutes.PUT("/:post_id", controller.UpdatePost())
+		postRoutes.DELETE("/:post_id", controller.DeletePost())
+	}
 }

@@ -13,3 +13,6 @@ const BODY_NAME_ALREADY_TAKEN string = "This name for body has already been take
 
 //MEMBERS ERROR
 const MEMBER_NOT_DELETED string = "Member not able to be deleted"
+
+//POST ERROR
+const POST_NOT_INSERTED string = "Post not started"
