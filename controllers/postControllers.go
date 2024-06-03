@@ -40,7 +40,7 @@ func CreatePost() gin.HandlerFunc {
 		post.User_id = c.GetString("uid")
 		post.ID = primitive.NewObjectID()
 		post.Votes = []string{}
-		post.Edited = true
+		post.Edited = false
 
 		resultInsertionNumber, insertErr := postCollection.InsertOne(ctx, post)
 		if insertErr != nil {
@@ -196,5 +196,80 @@ func ToggleVote() gin.HandlerFunc {
 
 		fmt.Println(result)
 		c.JSON(http.StatusOK, "Post updated successfully")
+	}
+}
+
+func UpdatePost() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		pid := c.Param("post_id")
+		uid := c.GetString("uid")
+
+		var post models.Post
+
+		_id, err := primitive.ObjectIDFromHex(pid) // convert params to //mongodb Hex ID
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		if err := c.BindJSON(&post); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		validationErr := validate.Struct(post)
+		if validationErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+			return
+		}
+
+		filter := bson.D{{Key: "_id", Value: _id}, {Key: "uid", Value: uid}}
+
+		update := bson.D{{Key: "$set", Value: bson.D{
+			{Key: "body", Value: post.Body},
+			{Key: "link", Value: post.Link},
+			{Key: "tags", Value: post.Tags},
+			{Key: "edited", Value: true},
+		}}}
+
+		result, err := postCollection.UpdateOne(context.TODO(), filter, update)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			msg := "post has not been updated"
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		if result.MatchedCount == 0 {
+			msg := "No documents is matched"
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
+		c.JSON(http.StatusOK, "post updated successfully")
+	}
+}
+
+func DeletePost() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		pid := c.Param("post_id")
+		uid := c.GetString("uid")
+
+		_id, err := primitive.ObjectIDFromHex(pid) // convert params to //mongodb Hex ID
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
+		opts := options.Delete().SetCollation(&options.Collation{})
+
+		res, err := postCollection.DeleteOne(context.TODO(), bson.D{{Key: "_id", Value: _id}, {Key: "uid", Value: uid}}, opts)
+		if err != nil || (res.DeletedCount == 0) {
+			fmt.Println(err)
+			c.JSON(http.StatusBadRequest, gin.H{"msg": "No documents are matched"})
+			return
+		}
+
+		fmt.Println(res.DeletedCount)
+		c.JSON(http.StatusAccepted, gin.H{"msg": "Deleted successfully"})
 	}
 }

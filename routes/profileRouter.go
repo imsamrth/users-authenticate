@@ -20,5 +20,7 @@ func ProfileRoutes(incomingRoutes *gin.Engine) {
 		postRoutes.GET("/:post_id", controller.GetPost())
 		postRoutes.GET("/", controller.GetPosts())
 		postRoutes.PATCH("/:post_id", controller.ToggleVote())
+		postRoutes.PUT("/:post_id", controller.UpdatePost())
+		postRoutes.DELETE("/:post_id", controller.DeletePost())
 	}
 }
