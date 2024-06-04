@@ -26,11 +26,10 @@ func CreateEvent() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
-		bid := c.Param("body_id")
 		var payload struct {
-			Session  string
+			Bid      string `json:"bid" bson:"bid"`
 			Password string
-			Event    models.Event `json:"events"`
+			Event    models.Event `json:"event"`
 		}
 
 		if err := c.BindJSON(&payload); err != nil {
@@ -44,7 +43,7 @@ func CreateEvent() gin.HandlerFunc {
 			return
 		}
 
-		id, err := primitive.ObjectIDFromHex(bid)
+		id, err := primitive.ObjectIDFromHex(payload.Bid)
 		var foundBody models.Body
 		err = bodyCollection.FindOne(c, bson.M{"_id": id}, options.FindOne().SetProjection(bson.D{{Key: "password", Value: 1}})).Decode(&foundBody)
 		if err != nil {
@@ -60,6 +59,7 @@ func CreateEvent() gin.HandlerFunc {
 
 		defer cancel()
 
+		payload.Event.BID = payload.Bid
 		resultInsertionNumber, insertErr := eventCollection.InsertOne(ctx, payload.Event)
 		if insertErr != nil {
 			msg := fmt.Sprint("Event was not created")
@@ -234,5 +234,102 @@ func DeleteEvent() gin.HandlerFunc {
 
 		fmt.Println(res.DeletedCount)
 		c.JSON(http.StatusAccepted, gin.H{"msg": "Deleted successfully"})
+	}
+}
+
+func PutEventBanner() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		eid := c.Param("event_id")
+		bid := c.Request.FormValue("bid")
+		fmt.Println(eid)
+		id, err := primitive.ObjectIDFromHex(bid)
+
+		projection := bson.D{
+			{Key: "password", Value: 1},
+		}
+		opts := options.FindOne().SetProjection(projection)
+		password := c.Request.FormValue("password")
+
+		var foundBody models.Body
+		err = bodyCollection.FindOne(c, bson.M{"_id": id}, opts).Decode(&foundBody)
+
+		fmt.Printf("Given password %s\nFound password %s\n", password, *foundBody.Password)
+		passwordIsValid, msg := helper.VerifyPassword(password, *foundBody.Password)
+		if passwordIsValid != true {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		file, err := c.FormFile("image")
+
+		if err != nil && err.Error() != constants.NO_IMAGE_IN_FORM {
+			fmt.Println("Error in uploading Image : ", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		id, err = primitive.ObjectIDFromHex(eid)
+		count, err := eventCollection.CountDocuments(context.TODO(), bson.M{"_id": id, "bid": bid})
+		if err != nil || count > 1 {
+			log.Panic(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		fp := constants.EventBannerDir + "/" + eid
+		sp := constants.EventBannerURL + "/" + eid
+
+		imageURL := helper.GetImageURL(file, eid, fp, sp, c)
+
+		filter := bson.D{{Key: "_id", Value: id}}
+
+		update := bson.D{{Key: "$set", Value: bson.D{
+			{Key: "image", Value: imageURL},
+		}}}
+
+		result, err := eventCollection.UpdateOne(context.TODO(), filter, update)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			msg := "Event Image has not been updated"
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		if result.MatchedCount == 0 {
+			msg := "No documents is matched"
+			c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+			return
+		}
+
+		c.JSON(http.StatusOK, "Event Image updated successfully")
+	}
+}
+
+func GetEventBanner() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		eid := c.Param("event_id")
+		var event struct {
+			Image string `json:"image" bson:"image"`
+		}
+
+		findOpts := options.FindOne()
+		projection := bson.D{
+			{Key: "image", Value: 1},
+		}
+		findOpts.SetProjection(projection)
+
+		_id, err := primitive.ObjectIDFromHex(eid)
+		err = eventCollection.FindOne(c, bson.D{{Key: "_id", Value: _id}}, findOpts).Decode(&event)
+
+		if err != nil {
+			log.Print("Error finding event image", err)
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		c.JSON(http.StatusOK, event.Image)
 	}
 }

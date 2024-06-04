@@ -20,8 +20,16 @@ func GetImageURL(fh *multipart.FileHeader, id string, fp string, sp string, c *g
 
 	fileExt := strings.Split(fh.Filename, ".")[1]
 	image := fmt.Sprintf("%s.%s", id, fileExt)
+	filepath := fmt.Sprintf("%s/%s", fp, image)
 
-	err := c.SaveUploadedFile(fh, fmt.Sprintf("%s/%s", fp, image))
+	err := os.Remove(filepath)
+	if err != nil {
+		fmt.Println(err.Error())
+		if err.Error() == fmt.Sprintf("remove %s: The system cannot find the file specified.", filepath) {
+			err = nil
+		}
+	}
+	err = c.SaveUploadedFile(fh, filepath)
 	if err != nil {
 		fmt.Println("Error in saving Image :", err)
 		return constants.IMAGE_NOT_UPLOADED

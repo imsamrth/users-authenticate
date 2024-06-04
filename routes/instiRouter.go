@@ -29,9 +29,11 @@ func InstiRoutes(incomingRoutes *gin.Engine) {
 	{
 		eventRoutes.POST("/add", controller.CreateEvent())
 		eventRoutes.PUT("/:event_id", controller.UpdateEvent())
+		eventRoutes.PUT("/banner/:event_id", controller.PutEventBanner())
 		eventRoutes.DELETE("/:event_id", controller.DeleteEvent())
 		eventRoutes.Use(middleware.Authenticate())
 		eventRoutes.GET("/", controller.GetEvents())
 		eventRoutes.GET("/:event_id", controller.GetEvent())
+		eventRoutes.GET("/banner/:event_id", controller.GetEventBanner())
 	}
 }

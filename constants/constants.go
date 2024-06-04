@@ -28,6 +28,8 @@ const VenueImageDir string = ImageDir + "/venues"
 const VenueImageURL string = "/venue/images"
 const BodyLogoDir string = ImageDir + "/body"
 const BodyLogoURL string = "/body/logo"
+const EventBannerDir string = ImageDir + "/event"
+const EventBannerURL string = "/event/banner"
 
 // FORM CONSTANTS
 const TRUE string = "true"
