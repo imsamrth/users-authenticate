@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "heroic-equinox-421207",
+  "private_key_id": "6ec716ebbbee95d08318b078770d665049cf7a81",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCo4nOW+RRQzo68\nNc+Mj+m/2EmAYUauDhe/YIP7pXxu6Z6D64YxmtU5jx3GQF7k1AHmMRZlwh46vsUg\nAxQQ8q6hk6YCFy48WGcB9dUQ56qqkrvCX7u6WTsMMPD55aATIwOTTK9e5ej1OY1f\nj4+25cDMSPzKxNgk7govIdv+78kzbMqxjUGU925FYDahyXO0KkL8fUDqpRleOvC/\n2+8bc3Bd54gJX6iNZ7I3FAaTOy6nI51jXOuBgBXVnZ75VU+yueJoiDzV1GsczW4O\n2aSuXs/zJ2WCfrnkYBHkTvu2gl1QOG3j5O6QXdE4JUioeW5FvuvOfZCk5CpL/Sob\nZRy8tVPnAgMBAAECggEAUL+Ncub+/q/0cSrtZJC+u7qHUjmwmLImSpu0H1L9ju5m\nmz62d+tG/fFe1BadCJ4RlmVsBxVsbLwf9nFiW8QdGSZGXoOE2NeP0NEgoaeS42Gr\nIoGxeaUGZYrU/Tb8dYntQLWOuDoHS5DL9p/moBV0PHi9XZoGmomyFt0Cmf8+XTZk\n2jU7d6aBQoV8ZPU7je2xu295fj/iUM3oQlNLLnY6OPU6l40G9PPzyHT7Tca2ztT0\nwY4ZHUS9wbY6CXYJAaX2DHtC+M42ZsmXUH7+AACHxNCkAwZ5o/fvg3HNBoNRC+TZ\nU0Kqy6W0rI53fppWSGpvHx3NlOXpXS6kTAffJN+X6QKBgQDera04iXwQCZzwCzsE\nliRsEMaouctBaiTBR1hjDz2SpAmp9lOrl1e4YPDMogFJp2TuJNj2LaxqpsdoU2Vi\n2sH/Jl8uHGD6FBImT3QQh/4dw6W6d91NQH8vWioGQcyxEhIyR06rT2jnhyreYKfK\nED9n9x0MLtvMbLrkFuROHSgoYwKBgQDCKAzbfbpym9Ej+jCbrp4ggUBOC07H+dYb\n/fqgJ9AQqcCO2H9EiWnL73D65ekuNkvgxfzoCldCVAzc+Jky+9eSEEXvGUGlIf4Z\nnLjEe3xzXYYGJ1O3V0pNxeVDbPpu6y+khNZlH4FqAPN0P0Ij5X5oXrnyP72P4wAm\nzbUCtSmjrQKBgQCSFvdyBCD0lJn1kiiiFa7HhyoOP/ZtcCm09A20z6bhseT1MLor\n9RqDyHWyiwa1P7Ej2+DLgaOARPLGKxB1Dnf/4TjIk62747cUk0PeJJo/BMCR2VnC\n+PF4K3sup7SW5vgxLD8cfPiiDTe+tULfelFe7+yKtaNWNm9WfP5DkTVraQKBgGwC\nL7Ti6pfbSqtDAUt6Bol6nbVM4RSqTYvg7E2wGDVM2cwdcB9Gek5y810ADYohtnBi\nc+D577T8YPOEcGVGaJPe7ainWjdtA5hn8PmM4JylCGvf8NhrfPBrCLFLrL2LpENX\nipVSw4Ge6dBfaIHjp0CUgcjb4K5sz6bGhM3uzi05AoGAZ1GmQnIxBQgyvtb1xfJ7\nj4DezbmABaQxge+obEIFVqigEJJ93luu/zDkoKDr641ZaR8w8MHrJnQt1XitWShM\nYYm1gstUQDFTXOSAz21mXx1lYeoOrgdNpHknJ+uGDlMjGuuzLVMPv37JaWPur6R/\nYPvaF3d/eLhsA8/+Wjwl0d4=\n-----END PRIVATE KEY-----\n",
+  "client_email": "media-upload@heroic-equinox-421207.iam.gserviceaccount.com",
+  "client_id": "101932784988454085640",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/media-upload%40heroic-equinox-421207.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

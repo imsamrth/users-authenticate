@@ -51,7 +51,7 @@ func CreateVenue() gin.HandlerFunc {
 		venue.ID = primitive.NewObjectID()
 		venue.Creator = c.GetString("first_name")
 
-		file, _ := c.FormFile("images")
+		file, _ := c.FormFile("image")
 		fp := constants.VenueImageDir + "/" + venue.ID.Hex()
 		sp := constants.VenueImageURL + "/" + venue.ID.Hex()
 		imageURL := helper.GetImageURL(file, venue.ID.Hex(), fp, sp, c)
@@ -60,7 +60,6 @@ func CreateVenue() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": imageURL})
 			return
 		}
-
 		venue.ImageURL = imageURL
 
 		resultInsertionNumber, insertErr := venueCollection.InsertOne(ctx, venue)
