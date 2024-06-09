@@ -6,15 +6,10 @@ import (
 	"os"
 
 	"cloud.google.com/go/storage"
-	"github.com/joho/godotenv"
 	"google.golang.org/api/option"
 )
 
 func StorageInstance() (sc *storage.BucketHandle) {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 	ctx := context.Background()
 	bucket := os.Getenv("BUCKET")
 

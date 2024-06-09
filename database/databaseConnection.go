@@ -37,8 +37,9 @@ func DBinstance() *mongo.Client {
 }
 
 func DBAtlas() *mongo.Client {
+	MongoDB := os.Getenv("MONGODB_URL")
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI("mongodb+srv://instixbombay:demopassword@cluster0.d3wt5ho.mongodb.net/?retryWrites=true&w=majority&appName=cluster0").SetServerAPIOptions(serverAPI)
+	opts := options.Client().ApplyURI(MongoDB).SetServerAPIOptions(serverAPI)
 	// Create a new client and connect to the server
 	client, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
