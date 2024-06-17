@@ -3,8 +3,12 @@ package helper
 import (
 	"fmt"
 	"instix_auth/constants"
+	"instix_auth/database"
+	"io"
 	"log"
 	"mime/multipart"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -13,7 +17,10 @@ import (
 )
 
 var (
-	domName = os.Getenv("DomainName")
+	domName       = os.Getenv("DomainName")
+	bucketHandle  = database.BucketHandle
+	bucket        = os.Getenv("BUCKET")
+	storageDomain = os.Getenv("StorageDomain")
 )
 
 func GetImageURL(fh *multipart.FileHeader, id string, fp string, sp string, c *gin.Context) (ImageURL string) {
@@ -29,13 +36,12 @@ func GetImageURL(fh *multipart.FileHeader, id string, fp string, sp string, c *g
 			err = nil
 		}
 	}
-	err = c.SaveUploadedFile(fh, filepath)
+	ImageURL, err = UploadFile(fh, filepath, c)
 	if err != nil {
 		fmt.Println("Error in saving Image :", err)
 		return constants.IMAGE_NOT_UPLOADED
 	}
 
-	ImageURL = fmt.Sprintf("%s%s/%s", domName, sp, image)
 	return ImageURL
 }
 
@@ -80,4 +86,36 @@ func VerifyPassword(userPassword string, providedPassword string) (bool, string)
 		check = false
 	}
 	return check, msg
+}
+
+func UploadFile(fh *multipart.FileHeader, filepath string, ctx *gin.Context) (imageurl string, err error) {
+	err = nil
+	sw := bucketHandle.Object(filepath).NewWriter(ctx)
+	read, err := fh.Open()
+	if _, err = io.Copy(sw, read); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"error":   true,
+		})
+		return
+	}
+
+	if err = sw.Close(); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"error":   true,
+		})
+		return
+	}
+
+	u, err := url.Parse(storageDomain + "/" + bucket + "/" + sw.Attrs().Name)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+			"Error":   true,
+		})
+		return
+	}
+
+	return u.String(), err
 }
