@@ -19,6 +19,8 @@ const EVENTDATABASE string = "event"
 
 // Image Upload Paths
 const AssetsDir string = "./assets"
+const StaticFile string = AssetsDir + "/static/static.xlsx"
+const StaticFileURL string = "/static/static.xlsx"
 const ImageDir string = "images"
 const ProfileImageDir string = ImageDir + "/profiles"
 const ProfileImageURL string = "/my/profile-image"

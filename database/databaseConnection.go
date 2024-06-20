@@ -37,7 +37,12 @@ func DBinstance() *mongo.Client {
 }
 
 func DBAtlas() *mongo.Client {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	MongoDB := os.Getenv("MONGODB_URL")
+	log.Println(MongoDB)
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(MongoDB).SetServerAPIOptions(serverAPI)
 	// Create a new client and connect to the server

@@ -25,6 +25,7 @@ func main() {
 	routes.AuthlessRoutes(router)
 	routes.AuthRoutes(router)
 	routes.InstiRoutes(router)
+	routes.StaticRoutes(router)
 	routes.UserRoutes(router)
 	routes.ProfileRoutes(router)
 	routes.ItemRoutes(router)
