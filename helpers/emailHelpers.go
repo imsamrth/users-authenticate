@@ -42,7 +42,7 @@ func SendEmail(name, email, subject, HTMLbody, verficationLink string) error {
 
 	//NOTE : CHANGE THE HARD CODED EMAIL BEFRORE COMMIT
 	// sender data
-	email = "samarthbnsl@gmail.com"
+	//email = "samarthbnsl@gmail.com"
 	to := []string{email}
 	// smtp - Simple Mail Transfer Protocol
 	host := "smtp-auth.iitb.ac.in"
