@@ -33,6 +33,8 @@ func InstiRoutes(incomingRoutes *gin.Engine) {
 		eventRoutes.DELETE("/:event_id", controller.DeleteEvent())
 		eventRoutes.Use(middleware.Authenticate())
 		eventRoutes.GET("/", controller.GetEvents())
+		eventRoutes.GET("/live", controller.GetLiveEvents())
+		eventRoutes.GET("/upcoming", controller.GetUpcomingEvents())
 		eventRoutes.GET("/:event_id", controller.GetEvent())
 		eventRoutes.GET("/banner/:event_id", controller.GetEventBanner())
 	}

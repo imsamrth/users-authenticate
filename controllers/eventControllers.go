@@ -25,6 +25,7 @@ func CreateEvent() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
 
 		var payload struct {
 			Bid      string `json:"bid" bson:"bid"`
@@ -57,9 +58,11 @@ func CreateEvent() gin.HandlerFunc {
 			return
 		}
 
-		defer cancel()
-
 		payload.Event.BID = payload.Bid
+
+		payload.Event.StartTime = primitive.DateTime(payload.Event.StartTime)
+		payload.Event.EndTime = primitive.DateTime(payload.Event.EndTime)
+
 		resultInsertionNumber, insertErr := eventCollection.InsertOne(ctx, payload.Event)
 		if insertErr != nil {
 			msg := fmt.Sprint("Event was not created")
@@ -112,6 +115,82 @@ func GetEvents() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"count": len(events), "events": events})
+	}
+}
+
+func GetLiveEvents() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		query := c.Request.URL.RawQuery
+
+		var events []models.Event
+
+		opts := mgs.FindOption()
+		// Set max limit to restrict the number of results returned
+		opts.SetMaxLimit(20)
+		result, err := mgs.MongoGoSearch(query, opts)
+		if err != nil {
+			//invalid query
+			log.Print("Invalid query", err)
+			c.JSON(http.StatusInternalServerError, events)
+			return
+		}
+
+		findOpts := options.Find()
+		findOpts.SetLimit(result.Limit)
+		findOpts.SetSkip(result.Skip)
+		findOpts.SetSort(result.Sort)
+
+		mongo_result, err := eventCollection.Aggregate(c, bson.A{
+			bson.D{{"$match", bson.D{{"start_time", bson.D{{"$lte", time.Now()}}}, {"end_time", bson.D{{"$gte", time.Now()}}}}}},
+		})
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while listing user items"})
+		}
+		var allusers []bson.M
+		if err = mongo_result.All(c, &allusers); err != nil {
+			log.Fatal(err)
+		}
+		c.JSON(http.StatusOK, allusers)
+	}
+}
+
+func GetUpcomingEvents() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		query := c.Request.URL.RawQuery
+
+		var events []models.Event
+
+		opts := mgs.FindOption()
+		// Set max limit to restrict the number of results returned
+		opts.SetMaxLimit(20)
+		result, err := mgs.MongoGoSearch(query, opts)
+		if err != nil {
+			//invalid query
+			log.Print("Invalid query", err)
+			c.JSON(http.StatusInternalServerError, events)
+			return
+		}
+
+		findOpts := options.Find()
+		findOpts.SetLimit(result.Limit)
+		findOpts.SetSkip(result.Skip)
+		findOpts.SetSort(result.Sort)
+
+		mongo_result, err := eventCollection.Aggregate(c, bson.A{
+			bson.D{{"$match", bson.D{{"start_time", bson.D{{"$gte", time.Now()}}}}}},
+		})
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while listing user items"})
+		}
+		var allusers []bson.M
+		if err = mongo_result.All(c, &allusers); err != nil {
+			log.Fatal(err)
+		}
+		c.JSON(http.StatusOK, allusers)
 	}
 }
 

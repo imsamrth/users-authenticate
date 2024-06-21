@@ -70,11 +70,11 @@ type Event struct {
 	Name      string
 	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Desc      string
-	Image     string    `json:"image" bson:"image"`
-	BID       string    `json:"bid" bson:"bid"`
-	Type      string    `json:"type" bson:"type"`
-	Vid       string    `json:"vid" bson:"vid"`
-	StartTime time.Time `json:"start_time" bson:"start_time"`
-	EndTime   time.Time `json:"end_time" bson:"end_time"`
+	Image     string             `json:"image" bson:"image"`
+	BID       string             `json:"bid" bson:"bid"`
+	Type      string             `json:"type" bson:"type"`
+	Vid       string             `json:"vid" bson:"vid"`
+	StartTime primitive.DateTime `json:"start_time" bson:"start_time" validate:"required"`
+	EndTime   primitive.DateTime `json:"end_time" bson:"end_time" validate:"required"`
 	Tags      []string
 }

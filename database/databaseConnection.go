@@ -37,7 +37,6 @@ func DBinstance() *mongo.Client {
 }
 
 func DBAtlas() *mongo.Client {
-
 	MongoDB := os.Getenv("MONGODB_URL")
 	log.Println(MongoDB)
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)

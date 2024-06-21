@@ -25,7 +25,15 @@ var (
 
 func GetImageURL(fh *multipart.FileHeader, id string, fp string, sp string, c *gin.Context) (ImageURL string) {
 
-	fileExt := strings.Split(fh.Filename, ".")[1]
+	fmt.Println("Filename is ", fh.Filename)
+	var fileExt string
+
+	filenameArr := strings.Split(fh.Filename, ".")
+	if len(filenameArr) > 1 {
+		fileExt = filenameArr[1]
+	} else {
+		return constants.IMAGE_NOT_UPLOADED
+	}
 	image := fmt.Sprintf("%s.%s", id, fileExt)
 	filepath := fmt.Sprintf("%s/%s", fp, image)
 
