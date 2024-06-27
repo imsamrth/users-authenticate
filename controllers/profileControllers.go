@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -239,10 +240,10 @@ func UploadAvatar() gin.HandlerFunc {
 
 func GetProfiles() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// if err := helper.CheckUserType(c, "ADMIN"); err != nil {
-		// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		// 	return
-		// }
+		if err := helper.CheckUserType(c, "ADMIN"); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 		recordPerPage, err := strconv.Atoi(c.Query("recordPerPage"))
@@ -278,5 +279,40 @@ func GetProfiles() gin.HandlerFunc {
 			log.Fatal(err)
 		}
 		c.JSON(http.StatusOK, allprofiles[0])
+	}
+}
+
+func GetProfile() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		pid := c.Param("profile_id")
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		defer cancel()
+		id, err := primitive.ObjectIDFromHex(pid)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		result := profileCollection.FindOne(ctx, bson.M{"_id": id})
+		err = result.Err()
+
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				c.JSON(http.StatusBadRequest, gin.H{"error": constants.NO_PROFILE})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while getting profiles"})
+			return
+		} else {
+			var profile models.Profile
+			err = result.Decode(&profile)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "error parsing profile"})
+				return
+			}
+
+			c.JSON(http.StatusOK, profile)
+		}
 	}
 }

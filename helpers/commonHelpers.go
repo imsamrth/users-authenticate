@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -126,4 +127,12 @@ func UploadFile(fh *multipart.FileHeader, filepath string, ctx *gin.Context) (im
 	}
 
 	return u.String(), err
+}
+
+var objectIDFromHex = func(hex string, c gin.Context) primitive.ObjectID {
+	objectID, err := primitive.ObjectIDFromHex(hex)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+	return objectID
 }

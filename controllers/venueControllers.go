@@ -165,7 +165,6 @@ func GetVenue() gin.HandlerFunc {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 		var venue models.Venue
-		fmt.Println(vid)
 		id, err := primitive.ObjectIDFromHex(vid)
 
 		defer cancel()

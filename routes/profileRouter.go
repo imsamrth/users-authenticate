@@ -13,6 +13,7 @@ func ProfileRoutes(incomingRoutes *gin.Engine) {
 		profileRoutes.PATCH("/my/profile/:isPrimary", controller.UpdateProfile())
 		profileRoutes.PUT("my/username", controller.UpdateUsername())
 		profileRoutes.GET("/", controller.GetProfiles())
+		profileRoutes.GET("/:profile_id", controller.GetProfile())
 	}
 	postRoutes := incomingRoutes.Group("/post")
 	{

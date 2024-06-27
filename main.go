@@ -39,5 +39,6 @@ func main() {
 		c.JSON(200, gin.H{"success": "Access grated for api-2"})
 	})
 
+	//router.RunTLS(":" + port, "cert.crt", "cert.key")
 	router.Run(":" + port)
 }

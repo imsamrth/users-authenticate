@@ -147,12 +147,17 @@ func GetLiveEvents() gin.HandlerFunc {
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while listing user items"})
+			return
 		}
-		var allusers []bson.M
-		if err = mongo_result.All(c, &allusers); err != nil {
+		var allEvents []bson.M
+		if err = mongo_result.All(c, &allEvents); err != nil {
 			log.Fatal(err)
 		}
-		c.JSON(http.StatusOK, allusers)
+		if len(allEvents) == 0 {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No upcoming events"})
+			return
+		}
+		c.JSON(http.StatusOK, allEvents)
 	}
 }
 
@@ -184,13 +189,21 @@ func GetUpcomingEvents() gin.HandlerFunc {
 		})
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while listing user items"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while finding upcoming events"})
+			return
 		}
-		var allusers []bson.M
-		if err = mongo_result.All(c, &allusers); err != nil {
-			log.Fatal(err)
+		var allevents []bson.M
+		if err = mongo_result.All(c, &allevents); err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error occured while parsing events"})
+			return
 		}
-		c.JSON(http.StatusOK, allusers)
+
+		if len(allevents) == 0 {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No upcoming events"})
+			return
+		}
+		c.JSON(http.StatusOK, allevents)
 	}
 }
 
@@ -198,20 +211,129 @@ func GetEvent() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		eid := c.Param("event_id")
-		var event models.Event
-
-		findOpts := options.FindOne()
 
 		_id, err := primitive.ObjectIDFromHex(eid)
-		err = eventCollection.FindOne(c, bson.D{{Key: "_id", Value: _id}}, findOpts).Decode(&event)
+		var getEventPipeline = bson.A{
+			bson.D{{"$match", bson.D{{"_id", _id}}}},
+			bson.D{
+				{"$lookup",
+					bson.D{
+						{"from", "body"},
+						{"let",
+							bson.D{
+								{"bid",
+									bson.D{
+										{"$convert",
+											bson.D{
+												{"input", "$bid"},
+												{"to", "objectId"},
+												{"onError", "Error"},
+												{"onNull", "NA"},
+											},
+										},
+									},
+								},
+							},
+						},
+						{"pipeline",
+							bson.A{
+								bson.D{
+									{"$match",
+										bson.D{
+											{"$expr",
+												bson.D{
+													{"$eq",
+														bson.A{
+															"$_id",
+															"$$bid",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+								bson.D{
+									{"$project",
+										bson.D{
+											{"name", 1},
+											{"imageurl", 1},
+										},
+									},
+								},
+							},
+						},
+						{"as", "body"},
+					},
+				},
+			},
+			bson.D{
+				{"$lookup",
+					bson.D{
+						{"from", "venue"},
+						{"let",
+							bson.D{
+								{"vid",
+									bson.D{
+										{"$convert",
+											bson.D{
+												{"input", "$vid"},
+												{"to", "objectId"},
+												{"onError", "Error"},
+												{"onNull", "NA"},
+											},
+										},
+									},
+								},
+							},
+						},
+						{"pipeline",
+							bson.A{
+								bson.D{
+									{"$match",
+										bson.D{
+											{"$expr",
+												bson.D{
+													{"$eq",
+														bson.A{
+															"$_id",
+															"$$vid",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+								bson.D{
+									{"$project",
+										bson.D{
+											{"name", 1},
+										},
+									},
+								},
+							},
+						},
+						{"as", "venue"},
+					},
+				},
+			},
+		}
+		cur, err := eventCollection.Aggregate(c, getEventPipeline)
+		//err = eventCollection.FindOne(c, bson.D{{Key: "_id", Value: _id}}, findOpts).Decode(&event)
 
 		if err != nil {
 			log.Print("Error finding event", err)
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
-
-		c.JSON(http.StatusOK, event)
+		var allevetns []bson.M
+		if err = cur.All(c, &allevetns); err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+		c.JSON(http.StatusOK, allevetns)
 	}
 }
 

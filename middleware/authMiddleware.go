@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	helper "instix_auth/helpers"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,7 @@ func Authenticate() gin.HandlerFunc {
 
 		claims, err := helper.ValidateToken(clientToken)
 		if err != "" {
+			log.Println("Token expired")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 			c.Abort()
 			return

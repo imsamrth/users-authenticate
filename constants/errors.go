@@ -5,6 +5,9 @@ const IMAGE_EXIST string = "Image already exists"
 const IMAGE_NOT_UPLOADED string = "Image cannot be uploaded"
 const NO_IMAGE_IN_FORM string = "http: no such file"
 
+//PROFILE ERRORS
+const NO_PROFILE string = "No profile created or email is unverified"
+
 //VENUE ERRORS
 const VENUE_NOT_CREATED string = "Venue not created"
 
